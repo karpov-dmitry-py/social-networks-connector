@@ -1,17 +1,39 @@
 import logging
-
 import requests
+from abc import ABC, abstractmethod
 
-USER_ID = '33275712'
+
+class Connector(ABC):
+
+    @abstractmethod
+    def get_user_info(self):
+        pass
+
+    @abstractmethod
+    def get_friends(self):
+        pass
+
+    @abstractmethod
+    def get_wall(self):
+        pass
+
+    @staticmethod
+    def get_connector():
+        connectors = {
+            0: VkConnector,
+            1: TwitterConnector
+        }
+        return connectors
 
 
-class VkConnector:
+class VkConnector(Connector):
     ACCESS_KEY = 'ed770aaced770aaced770aac58ed05f4c1eed77ed770aacb27ecb1e54bfb59ba227936d'
     API_URL = 'https://api.vk.com/method/'
     API_VERSION = '5.120'
+    USER_ID = '33275712'
 
     def __init__(self, user_id=''):
-        self.user_id = str(user_id) if user_id else USER_ID
+        self.user_id = str(user_id) if user_id else self.USER_ID
         self._set_logger()
         self.payload = self._get_payload()
 
@@ -62,7 +84,7 @@ class VkConnector:
         return result
 
 
-class TwitterConnector:
+class TwitterConnector(Connector):
     ACCESS_KEY = 'your Twitter API token here'
     API_URL = 'https://api.twitter.com/1.1/'
 
@@ -119,7 +141,9 @@ class TwitterConnector:
 
 
 def main():
-    connector = VkConnector()
+    ''' класс коннектора к Vk = 0, класс коннектора к Twitter = 1 '''
+    connector_class = Connector.get_connector()[0]
+    connector = connector_class()
     connector.get_user_info()
     connector.get_wall()
     connector.get_friends()
