@@ -1,9 +1,18 @@
 import logging
 import requests
 from abc import ABC, abstractmethod
+from threading import RLock
 
 
 class Connector(ABC):
+    _instance = None
+    _lock = RLock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
 
     @abstractmethod
     def get_user_info(self):
@@ -18,10 +27,10 @@ class Connector(ABC):
         pass
 
     @staticmethod
-    def get_connector():
+    def get_connectors():
         connectors = {
-            0: VkConnector,
-            1: TwitterConnector
+            'vk': VkConnector,
+            'tw': TwitterConnector
         }
         return connectors
 
@@ -88,7 +97,7 @@ class TwitterConnector(Connector):
     ACCESS_KEY = 'your Twitter API token here'
     API_URL = 'https://api.twitter.com/1.1/'
 
-    def __init__(self, user_id):
+    def __init__(self, user_id=''):
         self.user_id = str(user_id)
         self._set_logger()
         self.payload = self._get_payload()
@@ -141,12 +150,12 @@ class TwitterConnector(Connector):
 
 
 def main():
-    ''' класс коннектора к Vk = 0, класс коннектора к Twitter = 1 '''
-    connector_class = Connector.get_connector()[0]
+    ''' ключи классов коннектора: к Vk = 'vk', к Twitter = 'tw' '''
+    connector_class = Connector.get_connectors().get('vk')
     connector = connector_class()
     connector.get_user_info()
-    connector.get_wall()
     connector.get_friends()
+    connector.get_wall()
 
 
 if __name__ == '__main__':
